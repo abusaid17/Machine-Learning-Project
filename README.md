@@ -1,24 +1,52 @@
-# Cardiovascular Disease Prediction Using Machine Learning
+<div align="center">
 
-A final year project that compares **seven machine learning models** for predicting cardiovascular disease from 11 patient examination and lifestyle measurements. All models are trained, tuned and evaluated on the same train / validation / test split of a real 70,000-record dataset.
+# ❤️ Cardiovascular Disease Prediction Using Machine Learning
 
-> **Disclaimer:** This is an educational project. It is not a medical device and must not be used for diagnosis or treatment decisions.
+**Seven models. One fair split. 70,000 real patient records.**
+A final year project that compares classical ML, gradient boosting and deep learning on a cardiovascular disease prediction task.
 
-## Table of Contents
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/abusaid17/Machine-Learning-Project/blob/main/Cardio_Disease_ML_Colab.ipynb)
+![Python](https://img.shields.io/badge/Python-3-3776AB?logo=python&logoColor=white)
+![scikit-learn](https://img.shields.io/badge/scikit--learn-ML-F7931E?logo=scikitlearn&logoColor=white)
+![XGBoost](https://img.shields.io/badge/XGBoost-boosting-17716a)
+![TensorFlow](https://img.shields.io/badge/TensorFlow-CNN-FF6F00?logo=tensorflow&logoColor=white)
+![Jupyter](https://img.shields.io/badge/Jupyter-Notebook-F37626?logo=jupyter&logoColor=white)
 
-- [Overview](#overview)
-- [Dataset](#dataset)
-- [Methodology](#methodology)
-- [Models](#models)
-- [Results](#results)
-- [Key Findings](#key-findings)
-- [Limitations](#limitations)
-- [Repository Structure](#repository-structure)
-- [How to Run](#how-to-run)
-- [Requirements](#requirements)
-- [Author](#author)
+[Highlights](#-highlights) · [Dataset](#-dataset) · [Pipeline](#-pipeline) · [Results](#-results) · [Quick start](#-quick-start) · [Author](#-author)
 
-## Overview
+</div>
+
+> ⚠️ **Disclaimer:** This is an educational project. It is not a medical device and must not be used for diagnosis or treatment decisions.
+
+---
+
+## ✨ Highlights
+
+| 📦 Data | 🤖 Models | 🏆 Best ROC-AUC | 🎯 Test accuracy range |
+|:---:|:---:|:---:|:---:|
+| **70,000** patient records | **7** algorithms compared | **0.8033** (XGBoost) | **72% to 73%** |
+
+- 🧹 **Real-world data cleaning:** impossible values (for example systolic blood pressure of 16,020 or -150) were found and removed.
+- 🔒 **No data leakage:** the scaler is fitted on the training set only; the test set is used once at the end.
+- 🧪 **Fair comparison:** every model uses the same stratified 70 / 15 / 15 train / validation / test split.
+- 🧠 **Tuning on a validation set** (tree depth, K for KNN, early stopping for XGBoost and the CNN).
+- 💬 **Honest conclusion:** very different algorithms land within about one percentage point of each other, because the data has only 11 features.
+
+## 📚 Table of Contents
+
+- [Overview](#-overview)
+- [Dataset](#-dataset)
+- [Pipeline](#-pipeline)
+- [Models](#-models)
+- [Results](#-results)
+- [Key Findings](#-key-findings)
+- [Limitations and Future Work](#-limitations-and-future-work)
+- [Repository Structure](#-repository-structure)
+- [Quick Start](#-quick-start)
+- [Tech Stack](#-tech-stack)
+- [Author](#-author)
+
+## 🔍 Overview
 
 | | |
 |---|---|
@@ -28,15 +56,17 @@ A final year project that compares **seven machine learning models** for predict
 | **Metrics** | Accuracy, Precision, Recall, F1, ROC-AUC |
 | **Environment** | Python, Google Colab |
 
-## Dataset
+## 🗂 Dataset
 
 The project uses the **Cardiovascular Disease dataset** published on Kaggle by Svetlana Ulianova.
 
-- Source: https://www.kaggle.com/datasets/sulianova/cardiovascular-disease-dataset
+🔗 https://www.kaggle.com/datasets/sulianova/cardiovascular-disease-dataset
+
 - 70,000 patient records, 11 input features and 1 target (plus an `id` column)
 - Classes are almost perfectly balanced (34,979 with disease, 35,021 without)
 - No missing values, but the data contains entry errors that must be cleaned
 - The CSV uses a **semicolon (`;`) separator**
+- Please refer to the Kaggle page for the dataset's license and terms of use
 
 | Feature | Description |
 |---|---|
@@ -51,23 +81,34 @@ The project uses the **Cardiovascular Disease dataset** published on Kaggle by S
 | `smoke` | Smoker (0/1) |
 | `alco` | Alcohol intake (0/1) |
 | `active` | Physical activity (0/1) |
-| `cardio` | **Target**: cardiovascular disease (0/1) |
+| `cardio` | **Target:** cardiovascular disease (0/1) |
 
-> The dataset file is not redistributed here. Download `cardio_train.csv` from Kaggle and place it in the project folder (see [How to Run](#how-to-run)).
+## ⚙️ Pipeline
 
-## Methodology
+```mermaid
+flowchart LR
+    A["Raw data<br/>70,000 rows"] --> B["Cleaning<br/>68,591 rows"]
+    B --> C["Stratified split<br/>70 / 15 / 15"]
+    C --> D["Scaling<br/>fit on train only"]
+    D --> E["Train 7 models"]
+    E --> F["Tune on<br/>validation set"]
+    F --> G["Final evaluation<br/>on test set"]
+```
 
-1. **Exploratory data analysis**: class balance, age distribution, correlation heatmap.
-2. **Data cleaning**
-   - Drop `id`; convert `age` from days to years.
-   - Remove impossible values: `ap_hi` outside 70 to 250, `ap_lo` outside 40 to 200, `ap_hi` not greater than `ap_lo`, `height` outside 120 to 220 cm, `weight` outside 30 to 200 kg.
-   - Remove duplicate rows.
-   - Result: **70,000 rows reduced to 68,591** (1,409 removed).
-3. **Stratified split (70 / 15 / 15)**: 48,013 train, 10,289 validation, 10,289 test (`random_state=42`).
-4. **Scaling**: `StandardScaler` fitted on the training set only, then applied to validation and test data (no data leakage). Scaled data is used by Logistic Regression, Linear Regression, SVM, KNN and the CNN. Decision Tree and XGBoost use unscaled data.
-5. **Tuning on the validation set** and a **single final evaluation on the test set**.
+**Cleaning rules**
 
-## Models
+- Drop `id`; convert `age` from days to years.
+- Remove rows where `ap_hi` is outside 70 to 250, `ap_lo` is outside 40 to 200, or `ap_hi` is not greater than `ap_lo`.
+- Remove rows where `height` is outside 120 to 220 cm or `weight` is outside 30 to 200 kg.
+- Remove duplicate rows.
+- Result: **70,000 rows reduced to 68,591** (1,409 removed).
+
+**Split and scaling**
+
+- Stratified split with `random_state=42`: **48,013 train / 10,289 validation / 10,289 test**.
+- `StandardScaler` is fitted on the training set only. Scaled data is used by Logistic Regression, Linear Regression, SVM, KNN and the CNN; Decision Tree and XGBoost use unscaled data.
+
+## 🤖 Models
 
 | Model | Notes |
 |---|---|
@@ -75,34 +116,80 @@ The project uses the **Cardiovascular Disease dataset** published on Kaggle by S
 | Decision Tree | `max_depth` tuned from 1 to 20 on validation accuracy (best: 8) |
 | Linear Regression | Baseline only: regression output thresholded at 0.5 |
 | SVM | RBF kernel, `C=1.0`, `gamma='scale'` |
-| XGBoost | 500 estimators max, learning rate 0.1, `max_depth=4`, early stopping (20 rounds) on validation log loss |
-| KNN | K tuned over {3, 5, 9, 15, 21, 25, 31, 41, 51} on validation accuracy (best: 51, the largest value tried) |
-| 1D CNN | Conv1D(32) - MaxPool - Conv1D(64) - MaxPool - Flatten - Dense(64) - Dropout(0.3) - Dense(1, sigmoid); Adam, binary cross-entropy, early stopping (patience 5, up to 50 epochs) |
+| XGBoost | Up to 500 estimators, learning rate 0.1, `max_depth=4`, early stopping (20 rounds) on validation log loss |
+| KNN | K tuned over {3, 5, 9, 15, 21, 25, 31, 41, 51} on validation accuracy (best: 51) |
+| 1D CNN | Keras model with early stopping on validation loss |
 
-## Results
+<details>
+<summary><b>1D CNN architecture (click to expand)</b></summary>
 
-Test-set results (10,289 patients), sorted by ROC-AUC. These are the values saved by the notebook in `model_comparison.csv`, rounded to four decimals.
+```
+Input (11 features, 1 channel)
+  -> Conv1D(32, kernel 3, ReLU, same padding) -> MaxPooling1D(2)
+  -> Conv1D(64, kernel 3, ReLU, same padding) -> MaxPooling1D(2)
+  -> Flatten -> Dense(64, ReLU) -> Dropout(0.3)
+  -> Dense(1, sigmoid)
 
-| Model | Accuracy | Precision | Recall | F1 | ROC-AUC |
-|---|---|---|---|---|---|
-| XGBoost | 0.7322 | 0.7557 | 0.6781 | 0.7148 | **0.8033** |
-| 1D CNN | 0.7315 | 0.7513 | 0.6836 | 0.7158 | 0.8006 |
-| Logistic Regression | 0.7246 | 0.7524 | 0.6608 | 0.7036 | 0.7939 |
-| Linear Regression (baseline) | 0.7215 | 0.7542 | 0.6486 | 0.6974 | 0.7934 |
-| KNN (K = 51) | 0.7230 | 0.7463 | 0.6669 | 0.7044 | 0.7920 |
-| SVM (RBF) | 0.7300 | 0.7598 | 0.6643 | 0.7089 | 0.7917 |
-| Decision Tree (depth 8) | 0.7297 | 0.7536 | 0.6741 | 0.7117 | 0.7896 |
+Optimizer: Adam | Loss: binary cross-entropy
+Batch size: 64 | Max epochs: 50 | EarlyStopping(patience=5, restore_best_weights=True)
+```
+
+</details>
+
+## 📊 Results
+
+Test-set results (10,289 patients), sorted by ROC-AUC. These are the values saved by the notebook in `model_comparison.csv`.
+
+| Rank | Model | Accuracy | Precision | Recall | F1 | ROC-AUC |
+|:---:|---|:---:|:---:|:---:|:---:|:---:|
+| 🥇 | **XGBoost** | 0.7322 | 0.7557 | 0.6781 | 0.7148 | **0.8033** |
+| 🥈 | **1D CNN** | 0.7315 | 0.7513 | 0.6836 | 0.7158 | 0.8006 |
+| 3 | Logistic Regression | 0.7246 | 0.7524 | 0.6608 | 0.7036 | 0.7939 |
+| 4 | Linear Regression (baseline) | 0.7215 | 0.7542 | 0.6486 | 0.6974 | 0.7934 |
+| 5 | KNN (K = 51) | 0.7230 | 0.7463 | 0.6669 | 0.7044 | 0.7920 |
+| 6 | SVM (RBF) | 0.7300 | 0.7598 | 0.6643 | 0.7089 | 0.7917 |
+| 7 | Decision Tree (depth 8) | 0.7297 | 0.7536 | 0.6741 | 0.7117 | 0.7896 |
+
+**ROC-AUC by model** (scale starts at 0.50, which is random guessing)
+
+```
+XGBoost              ████████████████████████████     0.8033
+1D CNN               ███████████████████████████      0.8006
+Logistic Regression  ███████████████████████████      0.7939
+Linear Regression    ███████████████████████████      0.7934
+KNN (K = 51)         ███████████████████████████      0.7920
+SVM (RBF)            ███████████████████████████      0.7917
+Decision Tree        ██████████████████████████       0.7896
+```
 
 Training accuracy is about 0.73 to 0.74 for every model, close to its test accuracy, so there is no sign of serious overfitting.
 
-## Key Findings
+## 💡 Key Findings
 
-- **All seven models perform almost identically**: 72 to 73% accuracy and ROC-AUC between 0.79 and 0.80. XGBoost and the CNN are marginally ahead, but the gap is only about one percentage point, so the ranking should not be over-interpreted.
-- With only 11 features, the information in the data limits what any algorithm can learn. A simple Logistic Regression is almost as good as XGBoost or a CNN.
-- Strongest correlations with the target (cleaned data): systolic blood pressure (0.43), diastolic blood pressure (0.34), age (0.24), cholesterol (0.22) and weight (0.18).
-- Recall is about 65 to 68% across the models, so roughly one in three patients with the disease is missed. In a medical setting this false-negative rate matters as much as accuracy.
+1. **All seven models perform almost identically**: 72 to 73% accuracy and ROC-AUC between 0.79 and 0.80. XGBoost and the CNN are marginally ahead, but the gap is only about one percentage point, so the ranking should not be over-interpreted.
+2. **The data sets the ceiling, not the algorithm.** With only 11 features, a simple Logistic Regression is almost as good as XGBoost or a deep network.
+3. **Blood pressure and age matter most.** Systolic blood pressure has the strongest correlation with the target, followed by diastolic blood pressure, age, cholesterol and weight.
+4. **Recall deserves attention.** Recall is about 65 to 68% across the models, so roughly one in three patients with the disease is missed. In a medical setting this false-negative rate matters as much as accuracy.
 
-## Limitations
+**Correlation of each feature with the target** (cleaned data; `░` marks a negative correlation)
+
+```
+Systolic BP (ap_hi)    +0.43  ██████████████████████████████
+Diastolic BP (ap_lo)   +0.34  ████████████████████████
+Age                    +0.24  █████████████████
+Cholesterol            +0.22  ████████████████
+Weight                 +0.18  █████████████
+Glucose                +0.09  ██████
+Gender                 +0.01  ▏
+Alcohol                -0.01  ░
+Height                 -0.01  ░
+Smoking                -0.02  ░
+Physical activity      -0.04  ░░░
+```
+
+## ⚠️ Limitations and Future Work
+
+**Limitations**
 
 - Only 11 measurements are available; richer clinical features would likely help.
 - Results come from one dataset and one random split; they are not clinically validated.
@@ -110,51 +197,72 @@ Training accuracy is about 0.73 to 0.74 for every model, close to its test accur
 - KNN's best K was the largest value in the search grid, so a larger K might do slightly better.
 - Linear Regression predicts numbers rather than classes and is included only as a baseline.
 
-**Possible future work:** add features such as BMI, use cross-validation and grid search, tune the decision threshold for higher recall, and test on an independent dataset.
+**Future work**
 
-## Repository Structure
+- [ ] Engineer new features such as BMI
+- [ ] Use cross-validation and grid search
+- [ ] Tune the decision threshold for higher recall
+- [ ] Validate on an independent dataset
+- [ ] Explain predictions with SHAP
+
+## 📁 Repository Structure
 
 ```
 .
 ├── Cardio_Disease_ML_Colab.ipynb   # Full pipeline: EDA, cleaning, 7 models, comparison
 ├── model_comparison.csv            # Test-set metrics for all models
-├── README.md
-└── cardio_train.csv                # Dataset (download from Kaggle, see below)
+├── cardio_train.csv                # Dataset file (source and terms: see Kaggle link above)
+└── README.md
 ```
 
-## How to Run
+## 🚀 Quick Start
 
 ### Option 1: Google Colab (recommended)
 
-1. Download `cardio_train.csv` from the [Kaggle dataset page](https://www.kaggle.com/datasets/sulianova/cardiovascular-disease-dataset).
-2. Open [Google Colab](https://colab.research.google.com/) and choose **File > Upload notebook** to upload `Cardio_Disease_ML_Colab.ipynb`.
-3. Upload `cardio_train.csv` to the Colab session (or place it in Google Drive and mount Drive), and set `DATA_PATH` in the loading cell accordingly.
-4. Choose **Runtime > Run all**. SVM, KNN and the CNN each take a few minutes.
+1. Click the **Open in Colab** badge at the top of this page.
+2. Make the dataset available to the notebook: upload `cardio_train.csv` to the Colab session, or place it in Google Drive and set `DATA_PATH` in the loading cell.
+3. Choose **Runtime > Run all**. SVM, KNN and the CNN each take a few minutes.
 
 ### Option 2: Run locally
 
 ```bash
-git clone <your-repository-url>
-cd <repository-folder>
+git clone https://github.com/abusaid17/Machine-Learning-Project.git
+cd Machine-Learning-Project
 pip install pandas numpy scikit-learn xgboost tensorflow matplotlib seaborn jupyter
 jupyter notebook Cardio_Disease_ML_Colab.ipynb
 ```
 
-The notebook was written for Colab. When running locally, remove or skip the cells that use `google.colab` (`files.upload()` and `files.download()`), and set `DATA_PATH = 'cardio_train.csv'` with the CSV in the same folder.
+The notebook was written for Colab. When running locally, skip the cells that use `google.colab` (`files.upload()` and `files.download()`) and set `DATA_PATH = 'cardio_train.csv'` with the CSV in the same folder.
 
-## Requirements
+## 🧰 Tech Stack
 
-- Python 3
-- pandas, numpy
-- scikit-learn
-- xgboost
-- tensorflow (Keras)
-- matplotlib, seaborn
+- **Language:** Python 3
+- **Data:** pandas, NumPy
+- **Classical ML:** scikit-learn (Logistic Regression, Decision Tree, Linear Regression, SVM, KNN)
+- **Boosting:** XGBoost
+- **Deep learning:** TensorFlow / Keras (1D CNN)
+- **Visualization:** Matplotlib, Seaborn
+- **Environment:** Google Colab / Jupyter
 
-## Author
+## 🙋 Author
 
 **Md Abu Said**
 Department of Computer Science and Engineering (CSE)
 National Institute of Textile Engineering and Research (NITER)
 
 Supervisor: Tanvir Ahmed
+
+GitHub: [@abusaid17](https://github.com/abusaid17)
+
+## 🙏 Acknowledgements
+
+- Dataset: Svetlana Ulianova, *Cardiovascular Disease dataset*, Kaggle.
+- Libraries: scikit-learn, XGBoost, TensorFlow, pandas and Matplotlib.
+
+---
+
+<div align="center">
+
+If you found this project useful or interesting, please consider giving it a ⭐
+
+</div>
